@@ -346,7 +346,7 @@ def main():
     #
     hdu2 = fits.PrimaryHDU()
     hdu2.data = bestfit
-    hdu2.writeto('/Users/charlotteavery/Documents/SURE project/Pa_alpha_gaussfit_noconstraints.fits')
+    hdu2.writeto('/Users/charlotteavery/Documents/SURE project/Pa_a_gaussfit_noconstraints.fits')
     
     
     
