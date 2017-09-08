@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import glob
 from datacube import datacube
+from astropy.stats import sigma_clip
 
 #Get list of files:
 filenames = glob.glob('Data/DataCubes/*/cor/*.fits')
@@ -16,15 +17,25 @@ dims = np.shape(dc.sflux)+np.shape(filenames)
 hcube = np.zeros(dims)
 
 i = 0
+plt.figure(figsize=(15, 10))
 for filename in filenames:
     dc = datacube()
     dc.read(filename)
     dc.align()
-    dc.normalise()
+    #dc.normalise()
 
     hcube[:,:,:,i] = dc.sflux 
     i += 1
     
+    ind = np.logical_and(dc.lam > 2.25, dc.lam < 2.35) 
+    spec = dc.sflux[ind,42,42]
+    wav = dc.lam[ind]
+    plt.subplot(7, 2, i)
+    plt.plot(wav, spec)
+
+
+
+
 #Loop through the spaxels of the hypercube, taking the mean and stddev:
 ysi = hcube.shape[1]
 xsi = hcube.shape[2]
@@ -40,9 +51,21 @@ sdc.sflux = np.full((lsi, ysi, xsi), np.NaN)
 for xpos in range(xsi):
     for ypos in range(ysi):
         spax = hcube[:,ypos,xpos,:]
-        mdc.sflux[:,ypos,xpos] = np.nanmedian(spax, axis=1)
-        sdc.sflux[:,ypos,xpos] = np.nanmedian(spax, axis=1)
-        
+        allnan = np.all(np.isnan(spax))
+        if allnan == False:
+            clipped = sigma_clip(spax, axis=1)
+            mdc.sflux[:,ypos,xpos] = np.ma.mean(clipped, axis=1)
+            sdc.sflux[:,ypos,xpos] = np.ma.std(clipped, axis=1)
+
 #Save the output:
 mdc.save('mean.fits',header=dc.hdr)
 sdc.save('stddev.fits',header=dc.hdr)
+
+'''
+ind = np.logical_and(dc.lam > 2.25, dc.lam < 2.35) 
+spec = mdc.sflux[ind,42,42]
+plt.subplot(7, 2, 14)
+plt.plot(dc.lam[ind],spec,color='r')
+plt.show()
+quit()
+'''

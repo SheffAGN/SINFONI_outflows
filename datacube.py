@@ -51,11 +51,10 @@ class datacube():
 
         #Set the aligned flag to True    
         self.aligned = True
-        
         '''
-        coll2 = np.nansum(self.sflux, axis=0)
+        spec = self.sflux[20:2000,:,:]
         plt.figure(figsize=(8, 2.5))
-        plt.subplot(1, 3, 1)
+        plt.subplot(2, 7, 1)
         plt.imshow(coll)
         plt.title("Data")
         plt.subplot(1, 3, 2)
