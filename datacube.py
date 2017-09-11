@@ -68,8 +68,11 @@ class datacube():
     def normalise(self):
 
         #Normalise the cube so that the central region sums to (an arbitrary) 10^7
-        coll = np.nansum(self.sflux[:,37:47,37:47])
-        norm = 1e7/coll
+        ind = np.logical_and(self.lam > 2.0, self.lam < 2.35)
+        #self.coll = np.nansum(self.sflux[ind,37:47,37:47])
+        self.coll = np.nansum(self.sflux[ind,42,42])
+        print self.coll
+        norm = 1e7/self.coll
         self.sflux = norm*self.sflux
 
         #Set the normalised flag to True    

@@ -22,17 +22,19 @@ for filename in filenames:
     dc = datacube()
     dc.read(filename)
     dc.align()
+
+    #Don't bother normalising, it doesn't help
+    #(should also not be needed when flux calibrated)
     #dc.normalise()
 
     hcube[:,:,:,i] = dc.sflux 
     i += 1
     
-    ind = np.logical_and(dc.lam > 2.25, dc.lam < 2.35) 
-    spec = dc.sflux[ind,42,42]
+    ind = np.logical_and(dc.lam > 2.0, dc.lam < 2.35) 
+    spec = dc.sflux[ind,40,42]
     wav = dc.lam[ind]
-    plt.subplot(7, 2, i)
-    plt.plot(wav, spec)
-
+    #plt.subplot(7, 2, i)
+    #plt.plot(wav, spec)
 
 
 
@@ -56,6 +58,12 @@ for xpos in range(xsi):
             clipped = sigma_clip(spax, axis=1)
             mdc.sflux[:,ypos,xpos] = np.ma.mean(clipped, axis=1)
             sdc.sflux[:,ypos,xpos] = np.ma.std(clipped, axis=1)
+
+ind = np.logical_and(dc.lam > 2.0, dc.lam < 2.35) 
+spec = mdc.sflux[ind,22,22]
+wav = dc.lam[ind]
+plt.plot(wav, spec)
+plt.show()
 
 #Save the output:
 mdc.save('mean.fits',header=dc.hdr)
