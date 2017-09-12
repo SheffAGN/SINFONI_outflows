@@ -3,3 +3,4 @@ Data
 *~
 *.fits
 .vscode
+.DS_Store

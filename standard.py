@@ -3,14 +3,19 @@ from datacube import datacube
 import matplotlib.pyplot as plt
 from astropy import units as u
 from astropy.modeling.blackbody import blackbody_lambda as bb
+from astropy.modeling import models, fitting
+from astropy.convolution import convolve, Box1DKernel
+
+
 from scipy.integrate import simps
 
 std = datacube()
 std.read('Data/DataCubes/1327202/std/out_cube_obj00.fits')
 
 #Calculate the Count Rate (need to check header exptime)
-exptime = std.hdr['EXPTIME']
-ctrt = std.flux/exptime
+dit = std.hdr['EXPTIME']
+ndit = 2.
+ctrt = std.flux/(dit*ndit)
 
 #Approximate star with blackbody:
 bbwav = (std.lam * u.micron).to(u.AA)
@@ -30,16 +35,33 @@ flux0 = (4.283e-14 * u.W/(u.cm**2 * u.micron)).to(u.erg/(u.s*u.cm**2 * u.AA))
 kflux = flux0*(10.**(-kmag/2.5))
 norm = kflux/intbb
 bbflux = norm*bbflux.value
-print bbflux
-
-plt.plot(bbwav.value, bbflux)
-plt.show()
-quit()
 
 #Extract the star:
-ypos, xpos = np.mgrid[0:64,0:64]
-print xpos
+#Find the maximum position:
+#Collapse datacube, ignorin NaNs:
+coll = np.nansum(std.flux, axis=0)
 
+xmax, ymax = np.unravel_index(np.argmax(coll), coll.shape)
+g_init = models.Gaussian2D(amplitude=np.max(coll), \
+                           x_mean=xmax, y_mean=ymax, \
+                           x_stddev=2.8, y_stddev=2.8)
+        
+fit_g = fitting.LevMarLSQFitter()
+y, x = np.mgrid[:64, :64]
+fit = fit_g(g_init, x, y, coll, weights=np.sqrt(np.abs(coll)))
+mask = fit(x,y)/np.max(fit(x,y)) < 0.01 
+mask = np.tile(mask, (bbwav.size, 1, 1))
+masked = np.ma.array(data=ctrt, mask=mask)
+ctrtspec = np.ma.sum(np.ma.sum(masked, axis=1), axis=1)
+smooth = convolve(ctrtspec, Box1DKernel(10))
+
+
+#print mask[1000:1200,33,17]
+#print masked[1000:1200,33,17]
+print ctrtspec[1000:1200].data
+plt.plot(smooth)
+plt.show()
+quit()
 '''
 agn = datacube()
 agn.read('Data/DataCubes/1327202/cor/out_cube_obj_cor00.fits')
