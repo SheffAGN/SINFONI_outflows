@@ -21,11 +21,13 @@ bbflux = bb(bbwav, bbtemp)*u.sr #units of ergs/s/cm2/A
 wav, resp = np.loadtxt('Ks.dat', usecols=(0, 1), unpack=True)
 intresp = np.interp(bbwav.value, wav, resp, left=0., right=0.)
 
-#Integrate over filter to get Ks mag of BB:
+#Integrate over filter:
+intbb = simps(bbflux*intresp, bbwav)/simps(intresp, bbwav)
+
+#Normalise bbflux such that it matches the mag of the source:
 mag = 7.
 flux0 = (4.283e-14 * u.W/(u.cm**2 * u.micron)).to(u.erg/(u.s*u.cm**2 * u.AA))
 kflux = flux0*(10.**(-mag/2.5))
-intbb = simps(bbflux*intresp, bbwav)/simps(intresp, bbwav)
 norm = kflux/intbb
 bbflux = norm*bbflux.value
 print bbflux
