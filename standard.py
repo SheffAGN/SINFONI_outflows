@@ -31,10 +31,7 @@ kflux = flux0*(10.**(-kmag/2.5))
 norm = kflux/intbb
 bbflux = norm*bbflux.value
 print bbflux
-quit()
 
-print bbflux
-quit()
 plt.plot(bbwav.value, bbflux)
 plt.show()
 quit()
