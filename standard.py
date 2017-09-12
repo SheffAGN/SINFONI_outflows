@@ -29,7 +29,7 @@ kmag = 7.
 flux0 = (4.283e-14 * u.W/(u.cm**2 * u.micron)).to(u.erg/(u.s*u.cm**2 * u.AA))
 kflux = flux0*(10.**(-kmag/2.5))
 norm = kflux/intbb
-bbflux = norm*bbflux
+bbflux = norm*bbflux.value
 print bbflux
 quit()
 
