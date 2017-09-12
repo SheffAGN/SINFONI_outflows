@@ -25,11 +25,11 @@ intresp = np.interp(bbwav.value, wav, resp, left=0., right=0.)
 intbb = simps(bbflux*intresp, bbwav)/simps(intresp, bbwav)
 
 #Normalise bbflux such that it matches the mag of the source:
-mag = 7.
+kmag = 7.
 flux0 = (4.283e-14 * u.W/(u.cm**2 * u.micron)).to(u.erg/(u.s*u.cm**2 * u.AA))
-kflux = flux0*(10.**(-mag/2.5))
+kflux = flux0*(10.**(-kmag/2.5))
 norm = kflux/intbb
-bbflux = norm*bbflux.value
+bbflux = norm*bbflux
 print bbflux
 quit()
 
