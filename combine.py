@@ -64,7 +64,7 @@ spec = mdc.sflux[ind,22,22]
 wav = dc.lam[ind]
 plt.plot(wav, spec)
 plt.show()
-
+quit()
 #Save the output:
 mdc.save('mean.fits',header=dc.hdr)
 sdc.save('stddev.fits',header=dc.hdr)
