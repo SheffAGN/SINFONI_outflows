@@ -1,18 +1,27 @@
 import numpy as np
-from datacube import datacube
+from datacube import standard
 import matplotlib.pyplot as plt
 from astropy import units as u
 from astropy.modeling.blackbody import blackbody_lambda as bb
 from astropy.modeling import models, fitting
 from astropy.convolution import convolve, Box1DKernel
-
-
 from scipy.integrate import simps
 
-std = datacube()
-std.read('Data/DataCubes/1327202/std/out_cube_obj00.fits')
 
-#Calculate the Count Rate (need to check header exptime)
+
+std = standard()
+std.read('Data/DataCubes/1327202/std/out_cube_obj00.fits')
+std.genbb()
+std.genfilter()
+std.calbb()
+std.extract()
+std.getctrt()
+std.getpts()
+std.fitpts()
+std.getconv()
+quit()
+
+#Calculate the Count Rate
 dit = std.hdr['EXPTIME']
 ndit = 2.
 ctrt = std.flux/(dit*ndit) * u.ct / u.s
