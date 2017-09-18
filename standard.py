@@ -11,14 +11,7 @@ from scipy.integrate import simps
 
 std = standard()
 std.read('Data/DataCubes/1327202/std/out_cube_obj00.fits')
-std.genbb()
-std.genfilter()
-std.calbb()
-std.extract()
-std.getctrt()
-std.getpts()
-std.fitpts()
-std.getconv()
+std.process()
 quit()
 
 #Calculate the Count Rate

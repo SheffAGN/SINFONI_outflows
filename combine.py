@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
-from datacube import datacube
+from datacube import science, standard
 from astropy.stats import sigma_clip
 
 #Get list of files:
@@ -12,6 +12,19 @@ sci = science()
 sci.read(filenames[0])
 sci.align()
 
+std = standard()
+std.read('Data/DataCubes/1327202/std/out_cube_obj00.fits')
+std.process()
+
+std.conv = std.conv[:,np.newaxis, np.newaxis]
+std.tell = std.tell[:,np.newaxis, np.newaxis]
+
+xx = sci.sflux*std.conv
+plt.plot(sci.lam, xx[:,42,42])
+xx = xx/std.tell
+plt.plot(sci.lam, xx[:,42,42])
+plt.show()
+quit()
 #Combine all datacubes into a single hypercube:
 dims = np.shape(sci.sflux)+np.shape(filenames)
 allsci = np.zeros(dims)

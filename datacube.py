@@ -46,7 +46,7 @@ class science(datacube):
         xmax, ymax = np.unravel_index(np.argmax(coll), coll.shape)
         g_init = models.Gaussian2D(amplitude=np.max(coll), \
                                    x_mean=xmax, y_mean=ymax, \
-                                   x_stddev=2.8, y_stddev=2.8)
+                                   x_stddev=2.8)
         y, x = np.mgrid[:64, :64]
         fit_g = fitting.LevMarLSQFitter()
         fit = fit_g(g_init, x, y, coll, weights=np.sqrt(np.abs(coll)))
@@ -145,14 +145,14 @@ class standard(datacube):
         masked = np.ma.array(data=self.flux, mask=mask)
         
         #Sum unmasked pixels to extract:
-        self.ctspec = np.ma.sum(np.ma.sum(masked, axis=1), axis=1)
+        self.ctspec = np.ma.filled(np.ma.sum(np.ma.sum(masked, axis=1), axis=1),0.)
 
     def getctrt(self, ndit=2):
         #Convert into countrate:
         exptime = self.hdr['EXPTIME'] * ndit * u.s
         smooth = convolve(self.ctspec, Box1DKernel(10)) * u.ct
 
-        self.ctspec = smooth / exptime
+        self.smctspec = smooth / exptime
 
     def getpts(self):
 
@@ -166,7 +166,7 @@ class standard(datacube):
             mask = ~np.logical_and(self.lam.to(u.micron).value>=row[0],\
                                    self.lam.to(u.micron).value<=row[1])
             self.means[i,0] = np.ma.mean(np.ma.array(data=self.lam,mask=mask)).value
-            self.means[i,1] = np.ma.mean(np.ma.array(data=self.ctspec,mask=mask)).value
+            self.means[i,1] = np.ma.mean(np.ma.array(data=self.smctspec,mask=mask)).value
             i += 1
 
     def fitpts(self):
@@ -181,6 +181,27 @@ class standard(datacube):
 
         self.conv = self.bbflux / self.ctspecfit
 
-        plt.plot(self.lam, self.conv * self.ctspec)
-        plt.plot(self.lam, self.bbflux)
-        plt.show()
+#        plt.plot(self.lam, self.conv * self.ctspec)
+#        plt.plot(self.lam, self.bbflux)
+#        plt.show()
+
+    def gettell(self):
+        
+        self.tell = self.ctspec / self.ctspecfit
+        ind  = np.logical_or(self.tell == 0, np.isnan(self.tell)) 
+        self.tell[ind] = 0. * u.ct
+        self.tell = self.tell / np.max(self.tell)
+        self.tell[ind] = 1. * u.ct
+        print(self.tell)
+
+    def process(self):
+
+        self.genbb()
+        self.genfilter()
+        self.calbb()
+        self.extract()
+        self.getctrt()
+        self.getpts()
+        self.fitpts()
+        self.getconv()
+        self.gettell()
