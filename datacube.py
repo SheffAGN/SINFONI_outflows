@@ -136,7 +136,7 @@ class standard(datacube):
         self.calibrated = True
         self.cal = norm * bbflux.value
 
-    def extract(self, ndit=2):
+    def extract(self):
         #Extract the star:
         #First, collapse along wav dimension:
         coll = np.nansum(self.flux, axis=0)
