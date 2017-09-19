@@ -56,13 +56,14 @@ class science(datacube):
         yshift = int(32-np.round(fit.y_mean.value))
 
         #Create a larger 3D array to put shifted cube into:
-        self.sflux = np.zeros((np.shape(self.flux)[0],84,84))
-        self.sflux[:] = np.NaN
+        flux = np.zeros((np.shape(self.flux)[0],84,84))
+        flux[:] = np.NaN
         xstart = 42-32+xshift
         ystart = 42-32+yshift
-        self.sflux[:,ystart:ystart+64,xstart:xstart+64] = self.flux
+        flux[:,ystart:ystart+64,xstart:xstart+64] = self.flux
 
         #Set the aligned flag to True    
+        self.flux = flux * self.flux.unit
         self.aligned = True
         '''
         spec = self.sflux[20:2000,:,:]
@@ -92,36 +93,48 @@ class science(datacube):
 
 class standard(datacube):
 
-    def __init__(self):
+    def __init__(self, mag=7, temp=15200.):
         super().__init__()
-        self.bbcal = False
-        self.fluxcal = False
 
-    def genbb(self, temp=15200):
-        bbwav = self.lam.to(u.AA)
-        self.bbflux = bb(bbwav, temp * u.K) * u.sr
+        self.mag = mag
+        self.temp = temp
 
-    def genfilter(self, fname='Ks.dat', zeromag=4.283e-14):
+        #Bookkeeping:
+        self.extracted = False
+        self.fitted = False
+        self.calibrated = False
+    
+    def genbb(self):
+
+        #Generate BB with given temp:
+        return bb(self.lam.to(u.AA), self.temp * u.K) * u.sr
+
+    def genfilter(self, fname='Ks.dat', \
+                  zeromag=4.283e-14 * u.W/(u.cm**2 * u.micron)):
+
         #Interpolates filter onto wav array:
         wav, resp = np.loadtxt(fname, usecols=(0, 1), unpack=True)
-        self.filtresp = np.interp(self.lam.to(u.AA).value, wav, resp,\
+        filtresp = np.interp(self.lam.to(u.AA).value, wav, resp,\
                                   left=0., right=0.)
-        self.zmag = zeromag
 
-    def calbb(self, mag=7.):
+        return filtresp, zeromag 
+
+    def calbb(self):
     
         #Calibrate the bb so it matches input mag:
         #Integrate over filter response function:
-        intbb = simps(self.bbflux * self.filtresp, self.lam.to(u.AA))/\
-                simps(self.filtresp, self.lam.to(u.AA))
+        bbflux = self.genbb()
+        filtresp, zmag = self.genfilter()
+        intbb = simps(bbflux * filtresp, self.lam.to(u.AA))/\
+                simps(filtresp, self.lam.to(u.AA))
         
         #Normalise bbflux such that it matches the mag of the source:
-        flux0 = (self.zmag * u.W/(u.cm**2 * u.micron)).\
-                to(u.erg/(u.s * u.cm**2 * u.AA))
-        flux = flux0 * (10.**(-mag/2.5))
+        flux0 = zmag.to(u.erg/(u.s * u.cm**2 * u.AA))
+        flux = flux0 * (10.**(-self.mag/2.5))
         norm = flux/intbb
-        self.bbflux = norm*self.bbflux.value
-        self.bbcal = True
+
+        self.calibrated = True
+        self.cal = norm * bbflux.value
 
     def extract(self, ndit=2):
         #Extract the star:
@@ -145,63 +158,76 @@ class standard(datacube):
         masked = np.ma.array(data=self.flux, mask=mask)
         
         #Sum unmasked pixels to extract:
-        self.ctspec = np.ma.filled(np.ma.sum(np.ma.sum(masked, axis=1), axis=1),0.)
+        ctspec = np.ma.filled(np.ma.sum(np.ma.sum(masked, axis=1), axis=1),0.)
+        ctspec[np.isnan(ctspec)] = 0.
+        
+        return ctspec
 
     def getctrt(self, ndit=2):
         #Convert into countrate:
         exptime = self.hdr['EXPTIME'] * ndit * u.s
-        smooth = convolve(self.ctspec, Box1DKernel(10)) * u.ct
 
-        self.smctspec = smooth / exptime
+        self.extracted = True
+        self.ctrt = self.extract() / exptime
 
     def getpts(self):
 
-        selwav = np.array([[1.982,1.985],[2.034,2.039],[2.09,2.1],\
-                  [2.14,2.15],[2.23,2.24],[2.31,2.315],[2.33,2.34],\
-                  [2.36,2.365],[2.398,2.402],[2.438,2.44]])
-        self.means = np.zeros_like(selwav)
+        #Smooth the spectrum:
+        if ~self.extracted:
+            self.getctrt()
+        
+        smooth = convolve(self.ctrt.value, Box1DKernel(10)) * u.ct / u.s
+
+        #Select wavelengths devoid of tellurics
+        selwav = np.array([[1.982,1.985],[2.034,2.039],[2.09,2.100],\
+                           [2.140,2.150],[2.230,2.240],[2.31,2.315],\
+                           [2.330,2.340],[2.360,2.365],[2.398,2.402],\
+                           [2.438,2.440]])
+        means = np.zeros_like(selwav)
 
         i = 0
         for row in selwav:
             mask = ~np.logical_and(self.lam.to(u.micron).value>=row[0],\
                                    self.lam.to(u.micron).value<=row[1])
-            self.means[i,0] = np.ma.mean(np.ma.array(data=self.lam,mask=mask)).value
-            self.means[i,1] = np.ma.mean(np.ma.array(data=self.smctspec,mask=mask)).value
+            means[i,0] = np.ma.mean(np.ma.array(data=self.lam, mask=mask)).value
+            means[i,1] = np.ma.mean(np.ma.array(data=smooth, mask=mask)).value
             i += 1
+
+        return means
 
     def fitpts(self):
         
         #Fit means with a polynomial:
+        means = self.getpts()
         p_init = models.Polynomial1D(degree=4)
         fit_p = fitting.LevMarLSQFitter()
-        p = fit_p(p_init, self.means[:,0], self.means[:,1])
-        self.ctspecfit = p(self.lam.to(u.micron).value) * u.ct / u.s
-
-    def getconv(self):
-
-        self.conv = self.bbflux / self.ctspecfit
-
-#        plt.plot(self.lam, self.conv * self.ctspec)
-#        plt.plot(self.lam, self.bbflux)
-#        plt.show()
-
-    def gettell(self):
+        p = fit_p(p_init, means[:,0], means[:,1])
         
-        self.tell = self.ctspec / self.ctspecfit
-        ind  = np.logical_or(self.tell == 0, np.isnan(self.tell)) 
-        self.tell[ind] = 0. * u.ct
-        self.tell = self.tell / np.max(self.tell)
-        self.tell[ind] = 1. * u.ct
-        print(self.tell)
+        self.fitted = True
+        self.fit = p(self.lam.to(u.micron).value) * u.ct / u.s
 
-    def process(self):
+    def calcconv(self):
 
-        self.genbb()
-        self.genfilter()
-        self.calbb()
-        self.extract()
-        self.getctrt()
-        self.getpts()
-        self.fitpts()
-        self.getconv()
-        self.gettell()
+        if ~self.fitted:
+            self.fitpts()
+        if ~self.calibrated:
+            self.calbb()
+
+        self.conv = self.cal / self.fit
+
+    def calctell(self):
+        
+        if ~self.extracted:
+            self.getctrt()
+
+        if ~self.fitted:
+            self.fitpts()       
+
+        tell = self.ctrt / self.fit
+        
+        ind  = np.logical_or(tell == 0, np.isnan(tell)) 
+        tell[ind] = 0.
+        tell = tell / np.max(tell)
+        tell[ind] = 1.
+        
+        self.tell = tell

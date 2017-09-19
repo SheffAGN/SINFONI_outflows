@@ -3,6 +3,7 @@ import numpy as np
 import glob
 from datacube import science, standard
 from astropy.stats import sigma_clip
+from calibrate import fluxcal, telcorr
 
 #Get list of files:
 filenames = glob.glob('Data/DataCubes/*/cor/*.fits')
@@ -12,9 +13,16 @@ sci = science()
 sci.read(filenames[0])
 sci.align()
 
-std = standard()
+std = standard(mag=7.,temp=15200.)
 std.read('Data/DataCubes/1327202/std/out_cube_obj00.fits')
-std.process()
+
+sci = fluxcal(sci, std, ndit=5)
+sci = telcorr(sci, std)
+
+plt.plot(sci.lam, sci.flux[:,42,42])
+plt.show()
+
+quit()
 
 std.conv = std.conv[:,np.newaxis, np.newaxis]
 std.tell = std.tell[:,np.newaxis, np.newaxis]
