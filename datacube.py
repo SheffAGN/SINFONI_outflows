@@ -139,10 +139,10 @@ class standard(datacube):
     def extract(self):
         #Extract the star:
         #First, collapse along wav dimension:
-        coll = np.nansum(self.flux, axis=0)
+        coll = np.nansum(self.flux[500:1500,:,:], axis=0)
 
         #Find maximum position as starting point to fit:
-        xmax, ymax = np.unravel_index(np.argmax(coll), coll.shape)
+        ymax, xmax = np.unravel_index(np.argmax(coll), coll.shape)
         g_init = models.Gaussian2D(amplitude=np.max(coll), \
                                    x_mean=xmax, y_mean=ymax, \
                                    x_stddev=2.8, y_stddev=2.8)

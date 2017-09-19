@@ -6,33 +6,26 @@ from astropy.stats import sigma_clip
 from calibrate import fluxcal, telcorr
 
 #Get list of files:
-filenames = glob.glob('Data/DataCubes/*/cor/*.fits')
+#filenames = glob.glob('Data/DataCubes/1327206/cor/*00.fits')
 
 #Read and align the first to get shape:
 sci = science()
-sci.read(filenames[0])
+sci.read(glob.glob('Data/DataCubes/1327218/cor/*00.fits')[0])
 sci.align()
 
 std = standard(mag=7.,temp=15200.)
-std.read('Data/DataCubes/1327202/std/out_cube_obj00.fits')
+std.read(glob.glob('Data/DataCubes/1327218/std/*00.fits')[0])
 
-sci = fluxcal(sci, std, ndit=5)
-sci = telcorr(sci, std)
-
-plt.plot(sci.lam, sci.flux[:,42,42])
+#sci = fluxcal(sci, std, ndit=5)
+#plt.plot(sci.lam, sci.flux[:,42,42])
+#sci = telcorr(sci, std)
+std.calctell()
+plt.plot(sci.lam, std.tell)
 plt.show()
 
 quit()
 
-std.conv = std.conv[:,np.newaxis, np.newaxis]
-std.tell = std.tell[:,np.newaxis, np.newaxis]
 
-xx = sci.sflux*std.conv
-plt.plot(sci.lam, xx[:,42,42])
-xx = xx/std.tell
-plt.plot(sci.lam, xx[:,42,42])
-plt.show()
-quit()
 #Combine all datacubes into a single hypercube:
 dims = np.shape(sci.sflux)+np.shape(filenames)
 allsci = np.zeros(dims)
