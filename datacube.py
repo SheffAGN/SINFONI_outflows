@@ -16,13 +16,17 @@ class datacube():
         hdulist = fits.open(fname)
 
         self.hdr = hdulist[0].header
-        self.flux = hdulist[0].data * u.ct
+        flux = hdulist[0].data * u.ct
 
         wavstart = float(self.hdr['CRVAL3'])-(float(self.hdr['NAXIS3'])/2)*float(self.hdr['CDELT3']) 
         wavend = float(self.hdr['CRVAL3'])+(float(self.hdr['NAXIS3'])/2-0.5)*float(self.hdr['CDELT3'])
         dwav = float(self.hdr['CDELT3'])
-        self.lam = np.arange(wavstart, wavend, dwav) * u.micron
-    
+        lam = np.arange(wavstart, wavend, dwav) * u.micron
+
+        #Clip to between 1.95 and 2.45 micron:
+        ind = np.logical_and(lam.value >= 1.95, lam.value <= 2.45)
+        self.lam = lam[ind]
+        self.flux = flux[ind,:,:]
         hdulist.close()
 
     def write(self,fname,header=None):

@@ -6,43 +6,44 @@ from astropy.stats import sigma_clip
 from calibrate import fluxcal, telcorr
 
 #Get list of files:
-#filenames = glob.glob('Data/DataCubes/1327206/cor/*00.fits')
+scis = glob.glob('Data/DataCubes/1*/cor/*.fits')
+stds = glob.glob('Data/DataCubes/1*/std/*.fits')
 
 #Read and align the first to get shape:
 sci = science()
-sci.read(glob.glob('Data/DataCubes/1327218/cor/*00.fits')[0])
+sci.read(glob.glob('Data/DataCubes/*/cor/*.fits')[0])
 sci.align()
 
-std = standard(mag=7.,temp=15200.)
-std.read(glob.glob('Data/DataCubes/1327218/std/*00.fits')[0])
-
-#sci = fluxcal(sci, std, ndit=5)
-#plt.plot(sci.lam, sci.flux[:,42,42])
-#sci = telcorr(sci, std)
-std.calctell()
-plt.plot(sci.lam, std.tell)
-plt.show()
-
-quit()
-
-
 #Combine all datacubes into a single hypercube:
-dims = np.shape(sci.sflux)+np.shape(filenames)
+dims = np.shape(sci.flux)+np.shape(scis)
 allsci = np.zeros(dims)
 
-i = 0
 plt.figure(figsize=(15, 10))
-for filename in filenames:
-    sci = datacube()
-    sci.read(filename)
+for i in range(len(scis)):
+    print(i, len(scis))
+    sci = science()
+    sci.read(scis[i])
     sci.align()
+
+    std = standard(mag=7.,temp=15200.)
+    std.read(stds[i])
 
     #Don't bother normalising, it doesn't help
     #(should also not be needed when flux calibrated)
     #dc.normalise()
 
-    allsci[:,:,:,i] = sci.sflux 
-    i += 1
+    sci = fluxcal(sci, std, ndit=5)
+    sci = telcorr(sci, std)
+    plt.subplot(6,2,i+1)
+    plt.plot(sci.lam, sci.flux[:,42,42])
+    
+    allsci[:,:,:,i] = sci.flux 
+    
+plt.show()
+
+quit()
+
+
     
 #Loop through the spaxels of the hypercube, taking the mean and stddev:
 ysi = allsci.shape[1]
