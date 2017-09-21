@@ -3,47 +3,55 @@ import numpy as np
 import glob
 from datacube import science, standard
 from astropy.stats import sigma_clip
+from astropy.coordinates import Angle
+from astropy import units as u
 from calibrate import fluxcal, telcorr
 
 #Get list of files:
 scis = glob.glob('Data/DataCubes/1*/cor/*.fits')
 stds = glob.glob('Data/DataCubes/1*/std/*.fits')
 
-#Read and align the first to get shape:
+#B5V, B5V, B3V, B2V, B2V, B5V, B8V, B8V, B8V, B8V, B3V, DA2
+mags = np.array([7.722,7.722,8.272,\
+                 7.400,7.400,7.256,\
+                 7.864,7.864,7.864,\
+                 7.864,7.757,11.768])
+temps = np.array([15200.,15200.,18800.,\
+                  20800.,20800.,15200.,\
+                  11400.,11400.,11400.,\
+                  11400.,18800.,25200.])
+
+#Read and align the first to get shape and normalisation:
 sci = science()
-sci.read(glob.glob('Data/DataCubes/*/cor/*.fits')[0])
+sci.read(glob.glob('Data/DataCubes/*/cor/*.fits')[11])
 sci.align()
+std = standard(mag=mags[11],temp=temps[11])
+std.read(stds[11])
+sci = fluxcal(sci, std, ndit=5)
+sci = telcorr(sci, std)
+ind = np.logical_and(sci.lam.value>2.26, sci.lam.value<2.30)
+ref = np.sum(sci.flux[ind,42,42])
+rsci = sci
 
 #Combine all datacubes into a single hypercube:
 dims = np.shape(sci.flux)+np.shape(scis)
 allsci = np.zeros(dims)
 
-plt.figure(figsize=(15, 10))
 for i in range(len(scis)):
-    print(i, len(scis))
+    
     sci = science()
     sci.read(scis[i])
     sci.align()
 
-    std = standard(mag=7.,temp=15200.)
+    std = standard(mag=mags[i],temp=temps[i])
     std.read(stds[i])
-
-    #Don't bother normalising, it doesn't help
-    #(should also not be needed when flux calibrated)
-    #dc.normalise()
 
     sci = fluxcal(sci, std, ndit=5)
     sci = telcorr(sci, std)
-    plt.subplot(6,2,i+1)
-    plt.plot(sci.lam, sci.flux[:,42,42])
-    
+    norm = ref / np.sum(sci.flux[ind,42,42])
+
+    sci.flux = norm * sci.flux
     allsci[:,:,:,i] = sci.flux 
-    
-plt.show()
-
-quit()
-
-
     
 #Loop through the spaxels of the hypercube, taking the mean and stddev:
 ysi = allsci.shape[1]
@@ -51,8 +59,10 @@ xsi = allsci.shape[2]
 lsi = allsci.shape[0]
 
 #Create "mean" and "stddev" datacubes:
-msci = datacube()
-ssci = datacube()
+msci = science()
+ssci = science()
+msci.lam = sci.lam
+ssci.lam = sci.lam
 msci.flux = np.full((lsi, ysi, xsi), np.NaN)
 ssci.flux = np.full((lsi, ysi, xsi), np.NaN)
 
@@ -65,16 +75,16 @@ for xpos in range(xsi):
             clipped = sigma_clip(spax, axis=1)
             msci.flux[:,ypos,xpos] = np.ma.mean(clipped, axis=1)
             ssci.flux[:,ypos,xpos] = np.ma.std(clipped, axis=1)
-
-ind = np.logical_and(msci.lam > 2.0, msci.lam < 2.35) 
-spec = mdc.sflux[ind,22,22] 
-wav = dc.lam[ind]
-plt.plot(wav, spec)
+ 
+wav = msci.lam
+plt.plot(msci.lam, rsci.flux[:,42,42], 'r')
+plt.plot(msci.lam, msci.flux[:,42,42], 'b')
 plt.show()
-quit()
+
 #Save the output:
-mdc.save('mean.fits',header=dc.hdr)
-sdc.save('stddev.fits',header=dc.hdr)
+msci.write('mean.fits',header=sci.hdr)
+ssci.write('stddev.fits',header=sci.hdr)
+quit()
 
 '''
 ind = np.logical_and(dc.lam > 2.25, dc.lam < 2.35) 

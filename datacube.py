@@ -11,6 +11,7 @@ class datacube():
 
     def __init__(self):
         self.flux = np.array([])
+        self.lam = np.array([])
 
     def read(self, fname):
         hdulist = fits.open(fname)
@@ -30,7 +31,7 @@ class datacube():
         hdulist.close()
 
     def write(self,fname,header=None):
-        fits.writeto(fname,self.sflux,header=header,overwrite=True)
+        fits.writeto(fname,self.flux,header=header,overwrite=True)
 
 class science(datacube):
 
@@ -109,11 +110,12 @@ class standard(datacube):
         self.calibrated = False
     
     def genbb(self):
-
+        print(self.temp)
         #Generate BB with given temp:
         return bb(self.lam.to(u.AA), self.temp * u.K) * u.sr
 
-    def genfilter(self, fname='Ks.dat', \
+    def genfilter(self, \
+                  fname='Ks.dat',\
                   zeromag=4.283e-14 * u.W/(u.cm**2 * u.micron)):
 
         #Interpolates filter onto wav array:
@@ -136,7 +138,7 @@ class standard(datacube):
         flux0 = zmag.to(u.erg/(u.s * u.cm**2 * u.AA))
         flux = flux0 * (10.**(-self.mag/2.5))
         norm = flux/intbb
-
+        print(self.mag)
         self.calibrated = True
         self.cal = norm * bbflux.value
 
@@ -228,7 +230,8 @@ class standard(datacube):
             self.fitpts()       
 
         tell = self.ctrt / self.fit
-        
+
+        tell[tell >= 1.08] = 1.
         ind  = np.logical_or(tell == 0, np.isnan(tell)) 
         tell[ind] = 0.
         tell = tell / np.max(tell)
