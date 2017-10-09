@@ -51,14 +51,14 @@
 % Please keep new commands to a minimum, and use \newcommand not \def to avoid
 % overwriting existing commands. Example:
 %\newcommand{\pcm}{\,cm$^{-2}$}	% per cm-squared
-
+\newcommand{\jf}{J1430$+$1339}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%% TITLE PAGE %%%%%%%%%%%%%%%%%%%
 
 % Title of the paper, and the short title which is used in the headers.
 % Keep the title short and informative.
-\title[Short title, max. 45 characters]{MNRAS \LaTeXe\ template -- title goes here}
+\title[Warm molecules of tea]{Warm molecules of tea: Molecular outflows in the Teacup Galaxy}
 
 % The list of authors, and the short list which is used in the headers.
 % If you need two or more lines of authors, add an extra line using \newauthor
@@ -88,10 +88,7 @@ $^{3}$Another Department, Different Institution, Street Address, City Postal Cod
 
 % Abstract of the paper
 \begin{abstract}
-This is a simple template for authors to write new MNRAS papers.
-The abstract should briefly describe the aims, methods, and main results of the paper.
-It should be a single paragraph not more than 250 words (200 words for Letters).
-No references should appear in the abstract.
+Abstract
 \end{abstract}
 
 % Select between one and six entries from the list of approved keywords.
@@ -106,18 +103,11 @@ keyword1 -- keyword2 -- keyword3
 
 \section{Introduction}
 
-This is a simple template for authors to write new MNRAS papers.
-See \texttt{mnras\_sample.tex} for a more complex example, and \texttt{mnras\_guide.tex}
-for a full user guide.
+\section{Observations and data reduction}
 
-All papers should start with an Introduction section, which sets the work
-in context, cites relevant earlier studies in the field by \citet{Others2013},
-and describes the problem the authors aim to solve \citep[e.g.][]{Author2012}.
+We observed \jf\ with SINFONI on the Very Large Telescope (VLT). The observations were split into X observing blocks (OBs), the first of which was carried-out on the XX, with the last on the XX. Each OB consisted of XX 300~s on-target integrations, with each on-sky integration followed by a 300~s nod-to-sky to facilitate sky background removal. This gives a total on-target integration time of XX~s.
 
-\section{Methods, Observations, Simulations etc.}
-
-Normally the next section describes the techniques the authors used.
-It is frequently split into subsections, such as Section~\ref{sec:maths} below.
+The data from each OB was reduced separately using the standard SINFONI EsoRex pipeline. The output of EsoRex is a bias and flat-corrected, sky-subtracted, wavelength-calibrated datacube. For flux calibration, we observed flux standard stars which were reduced using the same EsoRex pipeline. We wrote our own Python pipeline to flux-calibrate the science datacubes.\footnote{All our software is available at \url{https://github.com/SheffAGN/SINFONI_outflows}.} 
 
 \subsection{Maths}
 \label{sec:maths} % used for referring to this section from elsewhere
@@ -154,21 +144,21 @@ e.g. Table~\ref{tab:example_table}.
 %\end{figure}
 
 % Example table
-\begin{table}
-	\centering
-	\caption{This is an example table. Captions appear above each table.
-	Remember to define the quantities, symbols and units used.}
-	\label{tab:example_table}
-	\begin{tabular}{lccr} % four columns, alignment for each
-		\hline
-		A & B & C & D\\
-		\hline
-		1 & 2 & 3 & 4\\
-		2 & 4 & 6 & 8\\
-		3 & 5 & 7 & 9\\
-		\hline
-	\end{tabular}
-\end{table}
+%\begin{table}
+%	\centering
+%	\caption{This is an example table. Captions appear above each table.
+%	Remember to define the quantities, symbols and units used.}
+%	\label{tab:example_table}
+%	\begin{tabular}{lccr} % four columns, alignment for each
+%		\hline
+%		A & B & C & D\\
+%		\hline
+%		1 & 2 & 3 & 4\\
+%		2 & 4 & 6 & 8\\
+%		3 & 5 & 7 & 9\\
+%		\hline
+%	\end{tabular}
+%\end{table}
 
 
 \section{Conclusions}
