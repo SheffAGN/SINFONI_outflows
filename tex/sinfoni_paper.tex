@@ -107,9 +107,13 @@ keyword1 -- keyword2 -- keyword3
 
 We observed \jf\ with SINFONI on the Very Large Telescope (VLT). The observations were split into X observing blocks (OBs), the first of which was carried-out on the XX, with the last on the XX. Each OB consisted of XX 300~s on-target integrations, with each on-sky integration followed by a 300~s nod-to-sky to facilitate sky background removal. This gives a total on-target integration time of XX~s.
 
-The data from each OB was reduced separately using the standard SINFONI EsoRex pipeline. The output of EsoRex is a bias and flat-corrected, sky-subtracted, wavelength-calibrated datacube. For flux calibration, we observed flux standard stars which were reduced using the same EsoRex pipeline. We wrote our own Python pipeline to flux-calibrate the science datacubes.\footnote{All our software is available at \url{https://github.com/SheffAGN/SINFONI_outflows}.} 
+The data from each OB was reduced separately using the standard SINFONI EsoRex pipeline. The output of EsoRex is a bias and flat-corrected, sky-subtracted, wavelength-calibrated datacube. For flux calibration, we observed flux standard stars which were reduced using the same EsoRex pipeline. The same standards were also used to correct for telluric absorption features. Following \cite{Ramos-Almeida17}, we wrote our own Python pipeline to flux-calibrate and telluric-correct the science datacubes.\footnote{All our software is available at \url{https://github.com/SheffAGN/SINFONI_outflows}.} This pipeline models the standard as a blackbody with a temperature corresponding to its spectral type. It then integrates this model spectrum over the synthetic 2MASS Ks-band filter and normalises the corresponding model magnitude to match the 2MASS Ks-band magnitude. Next, it extracts the observed spectrum of the standard star (in ${\rm counts~s^{-1}}$) and fits telluric-free regions of its continuum with a fourth-order polynomial. The ratio of the normalised model blackbody spectrum and this polynomial fit gives the response of telescope, which we apply to the science datacube. Telluric correction is performed by multiplying the science flux-calibrated datacube by the ratio of the corrected standard spectrum to the normalised model blackbody spectrum.
+   
+After flux calibration and telluric correction, each science datacube was aligned such that the peak flux (in an image collapsed along the spectral dimension) lay at the centre of the image. We do not perform sub-pixel centroiding since the seeing PSF is significantly larger than the pixel size. After alignment, the calibrated datacubes from each OB are mean-combined with sigma clipping to produce our final science datacube.
 
-\subsection{Maths}
+\section{Results}
+As shown by \cite{Ramos-Almeida17}, the most striking feature of J1430+1339 in infrared spectroscopy is the kinematically complex Pa$\alpha$ line that extends to the top North-Eastern corner of our datacube. This corresponds to a physical scale of XXX~pc and coincides with the portion of the extended ``bubble'' that covered by our SINFONI observations.  
+
 \label{sec:maths} % used for referring to this section from elsewhere
 
 Simple mathematics can be inserted into the flow of the text e.g. $2\times3=6$
@@ -178,18 +182,18 @@ Try to keep it short.
 
 % The best way to enter references is to use BibTeX:
 
-%\bibliographystyle{mnras}
-%\bibliography{example} % if your bibtex file is called example.bib
+\bibliographystyle{mnras}
+\bibliography{sinfoni_paper} % if your bibtex file is called example.bib
 
 
 % Alternatively you could enter them by hand, like this:
 % This method is tedious and prone to error if you have lots of references
-\begin{thebibliography}{99}
-\bibitem[\protect\citeauthoryear{Author}{2012}]{Author2012}
-Author A.~N., 2013, Journal of Improbable Astronomy, 1, 1
-\bibitem[\protect\citeauthoryear{Others}{2013}]{Others2013}
-Others S., 2012, Journal of Interesting Stuff, 17, 198
-\end{thebibliography}
+% \begin{thebibliography}{99}
+% \bibitem[\protect\citeauthoryear{Author}{2012}]{Author2012}
+% Author A.~N., 2013, Journal of Improbable Astronomy, 1, 1
+% \bibitem[\protect\citeauthoryear{Others}{2013}]{Others2013}
+% Others S., 2012, Journal of Interesting Stuff, 17, 198
+% \end{thebibliography}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

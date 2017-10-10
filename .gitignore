@@ -10,3 +10,5 @@ Data
 *.out
 *.log
 *.synctex.gz
+*.bbl
+*.blg

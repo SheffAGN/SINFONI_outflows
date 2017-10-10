@@ -110,7 +110,6 @@ class standard(datacube):
         self.calibrated = False
     
     def genbb(self):
-        print(self.temp)
         #Generate BB with given temp:
         return bb(self.lam.to(u.AA), self.temp * u.K) * u.sr
 
@@ -138,7 +137,6 @@ class standard(datacube):
         flux0 = zmag.to(u.erg/(u.s * u.cm**2 * u.AA))
         flux = flux0 * (10.**(-self.mag/2.5))
         norm = flux/intbb
-        print(self.mag)
         self.calibrated = True
         self.cal = norm * bbflux.value
 
