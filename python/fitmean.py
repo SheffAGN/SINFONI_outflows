@@ -8,8 +8,8 @@ from astropy.convolution import convolve, Box1DKernel
 #Read in the mean and stddev datacubes:
 msci = datacube()
 msci.read('../Data/DataCubes/mean.fits')
-#sdc = datacube()
-#sdc.read('stddev.fits')
+sdc = datacube()
+sdc.read('stddev.fits')
 
 #std = standard(mag=7.722,temp=15200)
 #std.read('../Data/DataCubes/1327202/std/out_cube_obj00.fits')
